@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#081e29">
+  <title>Часы и календарь</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #fffaf0;
+      background: radial-gradient(ellipse at 22% 25%, #174739, #081e29 64%, #07131c);
+      font: 1rem system-ui, sans-serif;
+    }
+    main {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+      align-items: center;
+      gap: 5vw;
+      max-width: 100rem;
+      min-height: 100vh;
+      margin: auto;
+      padding: 5rem 6vw 3rem;
+    }
+    .clock { text-align: center; }
+    #time {
+      display: block;
+      white-space: nowrap;
+      font-size: clamp(2.6rem, 8.5vw, 10rem);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.045em;
+      line-height: 1.1;
+    }
+    #date { font-size: clamp(1.1rem, 2.2vw, 2rem); color: #c6ded4; }
+    .calendar {
+      padding: 1.4rem;
+      border: 1px solid #456361;
+      border-radius: 1.5rem;
+      background: #102b34;
+    }
+    table { width: 100%; table-layout: fixed; border-spacing: .15rem; text-align: center; }
+    caption {
+      margin-bottom: 1rem;
+      text-transform: capitalize;
+      font-size: clamp(1.25rem, 2.3vw, 2rem);
+      font-weight: 650;
+    }
+    th { color: #c6ded4; font-weight: 500; }
+    td { height: 2.5em; font-size: clamp(.95rem, 1.55vw, 1.35rem); }
+    td span { display: inline-grid; place-items: center; width: 2em; height: 2em; }
+    [aria-current="date"] { border-radius: 50%; background: #ffda90; color: #212929; font-weight: 700; }
+    button {
+      margin-top: 1.5rem;
+      padding: .7rem 1.15rem;
+      border: 1px solid #86ab9b;
+      border-radius: .65rem;
+      background: #183b36;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:focus { outline: 3px solid #ffda90; outline-offset: 4px; }
+    #fullscreen-status { min-height: 1.5em; margin: .65rem 0 0; color: #ffda90; }
+    .snow, .lights { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+    .flake {
+      position: absolute;
+      top: -1rem;
+      border-radius: 50%;
+      background: #e9ffff;
+      animation: snowfall linear infinite;
+    }
+    @keyframes snowfall {
+      from { transform: translateX(-1rem); }
+      to { transform: translate(5rem, calc(100vh + 2rem)); }
+    }
+    .lights {
+      bottom: auto;
+      display: flex;
+      justify-content: space-around;
+      height: 3rem;
+    }
+    .lights::before {
+      content: "";
+      position: absolute;
+      inset: -1.3rem -2% auto;
+      height: 2.25rem;
+      border-bottom: 2px solid #648776;
+      border-radius: 50%;
+    }
+    .bulb {
+      position: relative;
+      width: .55rem;
+      height: .8rem;
+      margin-top: .8rem;
+      border-radius: 60%;
+      background: currentColor;
+      box-shadow: 0 0 .8rem currentColor;
+      color: #ffd78a;
+      animation: glow 4s ease-in-out infinite alternate;
+    }
+    .bulb:nth-child(3n+2) { color: #ff8287; animation-delay: -2s; }
+    .bulb:nth-child(3n+3) { color: #a1e5c6; animation-delay: -1s; }
+    @keyframes glow { from { opacity: .35; } to { opacity: 1; } }
+    @media (max-width: 48rem) {
+      main { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+      .calendar { width: 100%; max-width: 26rem; justify-self: center; }
+      #time { font-size: clamp(2rem, 13vw, 6rem); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .snow { display: none; }
+      .bulb { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="snow" aria-hidden="true"></div>
+  <div class="lights" aria-hidden="true"></div>
+  <main>
+    <section class="clock" aria-label="Местное время">
+      <time id="time"></time>
+      <p id="date"></p>
+      <button type="button" id="fullscreen">На весь экран</button>
+      <p id="fullscreen-status" role="status"></p>
+    </section>
+    <div class="calendar">
+      <table>
+        <caption id="month"></caption>
+        <thead>
+          <tr>
+            <th scope="col">Пн</th><th scope="col">Вт</th><th scope="col">Ср</th>
+            <th scope="col">Чт</th><th scope="col">Пт</th><th scope="col">Сб</th>
+            <th scope="col">Вс</th>
+          </tr>
+        </thead>
+        <tbody id="days"></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    const time = document.getElementById('time');
+    const date = document.getElementById('date');
+    const month = document.getElementById('month');
+    const days = document.getElementById('days');
+    const fullscreenButton = document.getElementById('fullscreen');
+    const fullscreenStatus = document.getElementById('fullscreen-status');
+    const timeFormat = new Intl.DateTimeFormat('ru-RU', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+    });
+    const dateFormat = new Intl.DateTimeFormat('ru-RU', {
+      weekday: 'long', day: 'numeric', month: 'long'
+    });
+    const monthFormat = new Intl.DateTimeFormat('ru-RU', {
+      month: 'long', year: 'numeric'
+    });
+    let displayedDate;
+
+    function renderCalendar(now) {
+      const year = now.getFullYear();
+      const currentMonth = now.getMonth();
+      const firstWeekday = (new Date(year, currentMonth, 1).getDay() + 6) % 7;
+      const lastDay = new Date(year, currentMonth + 1, 0).getDate();
+      month.textContent = monthFormat.format(now);
+      days.textContent = '';
+
+      for (let start = 1 - firstWeekday; start <= lastDay; start += 7) {
+        const row = days.insertRow();
+        for (let day = start; day < start + 7; day += 1) {
+          const cell = row.insertCell();
+          if (day < 1 || day > lastDay) continue;
+          const label = document.createElement('span');
+          label.textContent = day;
+          if (day === now.getDate()) label.setAttribute('aria-current', 'date');
+          cell.appendChild(label);
+        }
+      }
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const currentDate = now.toDateString();
+      time.textContent = timeFormat.format(now);
+      time.dateTime = time.textContent;
+      if (displayedDate !== currentDate) {
+        displayedDate = currentDate;
+        date.textContent = dateFormat.format(now);
+        renderCalendar(now);
+      }
+    }
+
+    async function toggleFullscreen() {
+      fullscreenStatus.textContent = '';
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else if (document.fullscreenEnabled && document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else {
+          fullscreenStatus.textContent = 'В этом браузере полноэкранный режим недоступен.';
+        }
+      } catch {
+        fullscreenStatus.textContent = 'Браузер отклонил переключение полноэкранного режима.';
+      }
+    }
+
+    fullscreenButton.addEventListener('click', toggleFullscreen);
+    document.addEventListener('fullscreenchange', () => {
+      fullscreenButton.textContent = document.fullscreenElement
+        ? 'Выйти из полноэкранного режима'
+        : 'На весь экран';
+    });
+
+    const snow = document.querySelector('.snow');
+    for (let index = 0; index < 32; index += 1) {
+      const flake = document.createElement('span');
+      const size = 2 + Math.random() * 4;
+      const duration = 10 + Math.random() * 16;
+      flake.className = 'flake';
+      flake.style.left = Math.random() * 100 + '%';
+      flake.style.width = flake.style.height = size + 'px';
+      flake.style.opacity = .2 + Math.random() * .5;
+      flake.style.animationDuration = duration + 's';
+      flake.style.animationDelay = -Math.random() * duration + 's';
+      snow.appendChild(flake);
+    }
+
+    const lights = document.querySelector('.lights');
+    for (let index = 0; index < 18; index += 1) {
+      const bulb = document.createElement('span');
+      bulb.className = 'bulb';
+      bulb.style.marginTop = .25 + Math.sin(index / 17 * Math.PI) * .65 + 'rem';
+      lights.appendChild(bulb);
+    }
+
+    updateClock();
+    setInterval(updateClock, 250);
+  </script>
+</body>
+</html>
