@@ -6,7 +6,7 @@
   const ctx = canvas.getContext('2d');
   const temperature = document.querySelector('#weather-temperature');
   const condition = document.querySelector('#weather-condition');
-  const refreshInterval = 30 * 60 * 1000;
+  const refreshInterval = 15 * 60 * 1000;
   const groups = [
     [[0, 1], 'clear', 'Ясно'],
     [[2], 'partly', 'Переменная облачность'],
