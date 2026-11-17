@@ -7,8 +7,8 @@
   <title>Зимний вечер</title>
   <style>
     html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #181321; }
-    main, canvas, button { position: absolute; inset: 0; width: 100%; height: 100%; }
-    canvas { display: block; object-fit: cover; image-rendering: pixelated; }
+    main, #room, #fullscreen { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #room { display: block; object-fit: cover; image-rendering: pixelated; }
     .clock-widget {
       position: absolute;
       top: 9%;
@@ -32,6 +32,30 @@
       font-size: 1.85vw;
       font-size: clamp(14px, min(1.85vw, 3.3vh), 76px);
     }
+    #weather {
+      position: absolute;
+      top: 9%;
+      right: 5%;
+      z-index: 1;
+      color: #fff0d6;
+      text-align: right;
+      font: 500 clamp(12px, 1.5vw, 2.7vh)/1.25 system-ui, sans-serif;
+      text-shadow: 0 2px 3px #150f1b, 0 0 10px #150f1b;
+      pointer-events: none;
+    }
+    .weather-reading { display: flex; align-items: center; justify-content: flex-end; gap: .6em; }
+    #weather-icon {
+      width: clamp(38px, 6.5vw, 11.5vh);
+      height: auto;
+      image-rendering: pixelated;
+    }
+    #weather-temperature {
+      font-size: clamp(24px, 4.6vw, 8.1vh);
+      line-height: 1;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    #weather-condition { color: #f5d7b4; }
     button { padding: 0; border: 0; background: transparent; cursor: pointer; }
     #fullscreen:focus { outline: none; }
     [data-fullscreen] button { cursor: none; }
@@ -57,8 +81,17 @@
       <time id="calendar-date"></time>
     </div>
     <button id="fullscreen" type="button" aria-label="Включить полноэкранный режим"></button>
+    <aside id="weather" aria-label="Погода в Санкт-Петербурге" hidden>
+      <div>Санкт-Петербург</div>
+      <div class="weather-reading">
+        <canvas id="weather-icon" width="32" height="28" aria-hidden="true"></canvas>
+        <strong id="weather-temperature"></strong>
+      </div>
+      <div id="weather-condition"></div>
+    </aside>
     <p id="status" role="status"></p>
   </main>
   <script src="room.js" defer></script>
+  <script src="weather.js" defer></script>
 </body>
 </html>
