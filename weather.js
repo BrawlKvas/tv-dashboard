@@ -123,7 +123,7 @@
       const { current, time } = await response.json();
       const age = Date.now() / 1000 - time;
       if (!current || !Number.isFinite(current.temperature_2m) ||
-          !Number.isFinite(time) || age > 3 * 60 * 60) {
+          !Number.isFinite(time) || age > 60 * 60) {
         throw new Error('Weather missing or stale');
       }
 
