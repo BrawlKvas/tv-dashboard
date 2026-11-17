@@ -1,6 +1,11 @@
 'use strict';
 
 (() => {
+  const debug = document.querySelector('#weather-debug');
+  const report = (message) => {
+    debug.textContent = 'Погода · диагностика 1 · ' + message;
+  };
+  report('weather.js запущен');
   const widget = document.querySelector('#weather');
   const canvas = document.querySelector('#weather-icon');
   const ctx = canvas.getContext('2d');
@@ -118,14 +123,26 @@
   }
 
   async function updateWeather() {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    let timeout;
+    let timedOut = false;
+    let stage = 'возможности браузера';
     try {
+      if (typeof fetch !== 'function') throw new Error('fetch недоступен');
+      if (typeof AbortController !== 'function') throw new Error('AbortController недоступен');
+      const controller = new AbortController();
+      timeout = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, 10000);
+      stage = 'запрос к API';
+      report(stage + '…');
       const response = await fetch(endpoint, { signal: controller.signal });
-      if (!response.ok) throw new Error('Weather request failed');
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      stage = 'чтение JSON (HTTP ' + response.status + ')';
       const { current } = await response.json();
-      if (!current || !Number.isFinite(current.temperature_2m)) throw new Error('Temperature unavailable');
+      if (!current || !Number.isFinite(current.temperature_2m)) throw new Error('нет температуры в ответе');
 
+      stage = 'отрисовка виджета';
       const group = groups.find(([codes]) => codes.includes(current.weather_code));
       const degrees = Math.round(current.temperature_2m);
       temperature.textContent = (degrees < 0 ? '−' : '') + Math.abs(degrees) + '°C';
@@ -133,8 +150,12 @@
       canvas.hidden = !group || !ctx;
       if (group) drawIcon(group[1], current.is_day !== 0);
       widget.hidden = false;
-    } catch {
+      report('OK · HTTP ' + response.status + ' · код ' + current.weather_code +
+        ' · Canvas ' + (ctx ? 'OK' : 'недоступен'));
+    } catch (error) {
       widget.hidden = true;
+      const reason = timedOut ? 'таймаут 10 с' : error.name + ': ' + error.message;
+      report(stage + ' · ' + reason);
     } finally {
       clearTimeout(timeout);
       setTimeout(updateWeather, refreshInterval);

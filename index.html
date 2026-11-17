@@ -71,6 +71,21 @@
       pointer-events: none;
     }
     #status:empty { padding: 0; }
+    #weather-debug {
+      position: absolute;
+      z-index: 2;
+      right: 5%;
+      bottom: 5%;
+      left: 5%;
+      margin: 0;
+      padding: .65em .9em;
+      background: #181321;
+      color: #ffe2a2;
+      font: 16px/1.35 system-ui, sans-serif;
+      font-size: clamp(14px, 1.55vw, 30px);
+      overflow-wrap: break-word;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -90,8 +105,18 @@
       <div id="weather-condition"></div>
     </aside>
     <p id="status" role="status"></p>
+    <p id="weather-debug" role="status">Погода · диагностика 1 · ожидание weather.js</p>
   </main>
   <script src="room.js" defer></script>
-  <script src="weather.js" defer></script>
+  <script>
+    window.addEventListener('error', function (event) {
+      var source = event.filename || (event.target && event.target.src) || '';
+      if (!/\/weather\.js(?:\?|$)/.test(source)) return;
+      var reason = event.message || 'файл не загрузился';
+      document.getElementById('weather-debug').textContent =
+        'Погода · диагностика 1 · weather.js · ' + reason;
+    }, true);
+  </script>
+  <script src="weather.js?v=weather-debug-1" defer></script>
 </body>
 </html>
