@@ -1,0 +1,64 @@
+name: Deploy dashboard with weather
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '12,42 * * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Prepare static files and weather
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp index.html room.js weather.js dist/
+
+          forecast='https://api.open-meteo.com/v1/forecast?latitude=59.94&longitude=30.31&current=temperature_2m,weather_code,is_day&temperature_unit=celsius'
+          previous='https://brawlkvas.github.io/tv-dashboard/weather.json'
+
+          if curl -fsS --max-time 15 --retry 2 --retry-max-time 40 "$forecast" -o weather-response.json &&
+             jq -e '
+               select((.current.temperature_2m | type) == "number" and
+                      (.current.weather_code | type) == "number" and
+                      (.current.is_day == 0 or .current.is_day == 1))
+               | {current, time: (now | floor), source: "https://open-meteo.com/"}
+             ' weather-response.json > dist/weather.json; then
+            echo "Weather updated"
+          elif curl -fsS --max-time 10 "$previous" -o weather-response.json &&
+               jq -e '
+                 select((.time | type) == "number" and
+                        (.current.temperature_2m | type) == "number")
+               ' weather-response.json > dist/weather.json; then
+            echo "::warning::Using the last published weather snapshot"
+          else
+            rm -f dist/weather.json
+            echo "::warning::Weather unavailable for this deployment"
+          fi
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

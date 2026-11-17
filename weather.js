@@ -1,18 +1,12 @@
 'use strict';
 
 (() => {
-  const debug = document.querySelector('#weather-debug');
-  const report = (message) => {
-    debug.textContent = 'Погода · диагностика 1 · ' + message;
-  };
-  report('weather.js запущен');
   const widget = document.querySelector('#weather');
   const canvas = document.querySelector('#weather-icon');
   const ctx = canvas.getContext('2d');
   const temperature = document.querySelector('#weather-temperature');
   const condition = document.querySelector('#weather-condition');
   const refreshInterval = 30 * 60 * 1000;
-  const endpoint = 'https://api.open-meteo.com/v1/forecast?latitude=59.94&longitude=30.31&current=temperature_2m,weather_code,is_day&temperature_unit=celsius';
   const groups = [
     [[0, 1], 'clear', 'Ясно'],
     [[2], 'partly', 'Переменная облачность'],
@@ -123,26 +117,16 @@
   }
 
   async function updateWeather() {
-    let timeout;
-    let timedOut = false;
-    let stage = 'возможности браузера';
     try {
-      if (typeof fetch !== 'function') throw new Error('fetch недоступен');
-      if (typeof AbortController !== 'function') throw new Error('AbortController недоступен');
-      const controller = new AbortController();
-      timeout = setTimeout(() => {
-        timedOut = true;
-        controller.abort();
-      }, 10000);
-      stage = 'запрос к API';
-      report(stage + '…');
-      const response = await fetch(endpoint, { signal: controller.signal });
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      stage = 'чтение JSON (HTTP ' + response.status + ')';
-      const { current } = await response.json();
-      if (!current || !Number.isFinite(current.temperature_2m)) throw new Error('нет температуры в ответе');
+      const response = await fetch('./weather.json', { cache: 'no-cache' });
+      if (!response.ok) throw new Error('Weather unavailable');
+      const { current, time } = await response.json();
+      const age = Date.now() / 1000 - time;
+      if (!current || !Number.isFinite(current.temperature_2m) ||
+          !Number.isFinite(time) || age > 3 * 60 * 60) {
+        throw new Error('Weather missing or stale');
+      }
 
-      stage = 'отрисовка виджета';
       const group = groups.find(([codes]) => codes.includes(current.weather_code));
       const degrees = Math.round(current.temperature_2m);
       temperature.textContent = (degrees < 0 ? '−' : '') + Math.abs(degrees) + '°C';
@@ -150,14 +134,9 @@
       canvas.hidden = !group || !ctx;
       if (group) drawIcon(group[1], current.is_day !== 0);
       widget.hidden = false;
-      report('OK · HTTP ' + response.status + ' · код ' + current.weather_code +
-        ' · Canvas ' + (ctx ? 'OK' : 'недоступен'));
-    } catch (error) {
+    } catch {
       widget.hidden = true;
-      const reason = timedOut ? 'таймаут 10 с' : error.name + ': ' + error.message;
-      report(stage + ' · ' + reason);
     } finally {
-      clearTimeout(timeout);
       setTimeout(updateWeather, refreshInterval);
     }
   }
