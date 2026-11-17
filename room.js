@@ -153,14 +153,14 @@ function layout() {
 function roomShell() {
   const { w, h, center, floor, tree, hearth, win } = scene;
   const wall = ctx.createLinearGradient(0, 15, 0, floor);
-  wall.addColorStop(0, '#262238');
-  wall.addColorStop(.56, '#363046');
-  wall.addColorStop(1, '#322233');
+  wall.addColorStop(0, '#282025');
+  wall.addColorStop(.56, '#3d302c');
+  wall.addColorStop(1, '#352523');
   box(0, 0, w, h, '#251822');
   box(0, 0, w, floor, wall);
-  glow(win.x + win.w / 2, win.y + win.h / 2, win.w * 1.08, win.h * .96, '77,106,151', .35);
-  glow(hearth, floor - 45, 115, 130, '214,106,67', .27);
-  glow(tree, floor - 63, 98, 103, '156,115,74', .18);
+  glow(win.x + win.w / 2, win.y + win.h / 2, win.w * 1.08, win.h * .96, '77,106,151', .17);
+  glow(hearth, floor - 45, 115, 130, '239,160,76', .38);
+  glow(tree, floor - 63, 98, 103, '200,153,83', .27);
 
   // Faded wallpaper, with tiny staggered star motifs.
   for (let x = 21; x < w; x += 13) {
@@ -217,8 +217,8 @@ function roomShell() {
   for (let x = 10; x < w - 6; x += 17) {
     box(x, 5 - (x % 3), 4 + (x % 6), 1, '#4e3035');
   }
-  glow(hearth, floor + 10, 98, 40, '247,126,53', .22);
-  glow(center, floor + 4, 78, 49, '132,161,227', .12);
+  glow(hearth, floor + 10, 98, 40, '249,161,66', .30);
+  glow(center, floor + 4, 78, 49, '132,161,227', .06);
 }
 
 function garland() {
@@ -640,7 +640,7 @@ function fire(t) {
   box(hearth + 11, baseline - 1, 2, 2, '#bd5b45');
   box(hearth - 12, baseline, 2, 2, '#b75544');
   ctx.restore();
-  glow(hearth, hearthBase + 3, 63, 29, '255,123,62', .17 + Math.sin(t * 4.1) * .028);
+  glow(hearth, hearthBase + 3, 63, 29, '255,167,75', .23 + Math.sin(t * 4.1) * .028);
 }
 
 function gift(x, bottom, w, h, wrap, shade, ribbon) {
@@ -913,9 +913,9 @@ function paint(t) {
 
   const { w, h } = scene;
   const shade = ctx.createRadialGradient(w / 2, h * .49, h * .23, w / 2, h * .46, Math.hypot(w, h) * .55);
-  shade.addColorStop(0, '#100c1b00');
-  shade.addColorStop(.66, '#100c1b21');
-  shade.addColorStop(1, '#100c1b98');
+  shade.addColorStop(0, '#170e0900');
+  shade.addColorStop(.66, '#170e0938');
+  shade.addColorStop(1, '#170e09ab');
   box(0, 0, w, h, shade);
 }
 
