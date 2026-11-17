@@ -30,6 +30,37 @@ function syncFullscreen() {
 document.addEventListener('fullscreenchange', syncFullscreen);
 document.addEventListener('webkitfullscreenchange', syncFullscreen);
 
+const clock = document.querySelector('#clock');
+const calendarDate = document.querySelector('#calendar-date');
+const clockFormat = new Intl.DateTimeFormat('ru-RU', {
+  hour: '2-digit', minute: '2-digit', hour12: false
+});
+const calendarFormat = new Intl.DateTimeFormat('ru-RU', {
+  weekday: 'short', day: 'numeric', month: 'long'
+});
+let clockTimer;
+
+function updateClock() {
+  clearTimeout(clockTimer);
+  const now = new Date();
+  const time = clockFormat.format(now);
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+
+  clock.textContent = time;
+  clock.dateTime = time;
+  calendarDate.textContent = calendarFormat.format(now);
+  calendarDate.dateTime = `${year}-${month}-${day}`;
+
+  clockTimer = setTimeout(updateClock, 60000 - Date.now() % 60000);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) updateClock();
+});
+updateClock();
+
 const display = canvas.getContext('2d', { alpha: false });
 const backdrop = document.createElement('canvas');
 const foreground = document.createElement('canvas');

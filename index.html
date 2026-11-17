@@ -9,6 +9,29 @@
     html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #181321; }
     main, canvas, button { position: absolute; inset: 0; width: 100%; height: 100%; }
     canvas { display: block; object-fit: cover; image-rendering: pixelated; }
+    .clock-widget {
+      position: absolute;
+      top: 9%;
+      left: 5%;
+      color: #fff0d6;
+      font-family: system-ui, sans-serif;
+      text-shadow: 0 2px 3px #150f1b, 0 0 10px #150f1b;
+      pointer-events: none;
+    }
+    .clock-widget time { display: block; }
+    #clock {
+      font-size: 6.25vw;
+      font-size: clamp(28px, min(6.25vw, 11vh), 252px);
+      font-weight: 650;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    #calendar-date {
+      margin-top: .2em;
+      color: #f5d7b4;
+      font-size: 1.85vw;
+      font-size: clamp(14px, min(1.85vw, 3.3vh), 76px);
+    }
     button { padding: 0; border: 0; background: transparent; cursor: pointer; }
     #fullscreen:focus { outline: none; }
     [data-fullscreen] button { cursor: none; }
@@ -29,6 +52,10 @@
 <body>
   <main>
     <canvas id="room" role="img" aria-label="Пиксельная новогодняя комната с ёлкой и камином. За окном идёт снег."></canvas>
+    <div class="clock-widget" role="group" aria-label="Время и дата">
+      <time id="clock"></time>
+      <time id="calendar-date"></time>
+    </div>
     <button id="fullscreen" type="button" aria-label="Включить полноэкранный режим"></button>
     <p id="status" role="status"></p>
   </main>
